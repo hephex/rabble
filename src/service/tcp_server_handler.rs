@@ -197,7 +197,7 @@ impl<'de, C, S> ServiceHandler<C::Msg> for TcpServerHandler<C, S>
 {
     /// Initialize the state of the handler: Register timers and tcp listen socket
     fn init(&mut self,
-            registrar: &Registrar,
+            registrar: &mut Registrar,
             _node: &Node<C::Msg>) -> Result<()>
     {
         self.listener_id = try!(registrar.register(&self.listener, Event::Read)
@@ -219,7 +219,7 @@ impl<'de, C, S> ServiceHandler<C::Msg> for TcpServerHandler<C, S>
     fn handle_notification(&mut self,
                            node: &Node<C::Msg>,
                            notification: Notification,
-                           registrar: &Registrar) -> Result<()>
+                           registrar: &mut Registrar) -> Result<()>
     {
         if notification.id == self.listener_id {
             return self.accept_connections(registrar);
@@ -251,7 +251,7 @@ impl<'de, C, S> ServiceHandler<C::Msg> for TcpServerHandler<C, S>
     fn handle_envelope(&mut self,
                        node: &Node<C::Msg>,
                        envelope: Envelope<C::Msg>,
-                       _registrar: &Registrar) -> Result<()>
+                       _registrar: &mut Registrar) -> Result<()>
     {
         if envelope.correlation_id.is_none() {
             return Err(format!("No correlation id for envelope {:?}", envelope).into());

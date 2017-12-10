@@ -119,16 +119,16 @@ impl<'de, T: Serialize + Deserialize<'de> + Debug + Clone> ClusterServer<T> {
                 match *e.kind() {
                     ErrorKind::EncodeError(..) | ErrorKind::DecodeError(..) |
                     ErrorKind::RegistrarError(..) | ErrorKind::SendError(..) => {
-                        error!(self.logger, e.to_string());
+                        error!(self.logger, "received a registrar error"; "error" => e.to_string());
                         break;
                     }
 
                     ErrorKind::Shutdown(..) => {
-                        info!(self.logger, e.to_string());
+                        info!(self.logger, "received shutdown message"; "error" => e.to_string());
                         break;
                     },
 
-                    _ => warn!(self.logger, e.to_string())
+                    _ => warn!(self.logger, "error handling cluster message"; "error" => e.to_string())
                 }
             }
         }
@@ -554,7 +554,7 @@ impl<'de, T: Serialize + Deserialize<'de> + Debug + Clone> ClusterServer<T> {
         for node in to_connect {
             self.metrics.connection_attempts += 1;
             if let Err(e) = self.connect(node) {
-                warn!(self.logger, e.to_string());
+                warn!(self.logger, "cannot connect to node"; "error" => e.to_string());
             }
         }
 

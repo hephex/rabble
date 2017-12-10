@@ -75,7 +75,6 @@ use std::sync::mpsc::channel;
 use std::fmt::Debug;
 use serde::{Deserialize, Serialize};
 use amy::Poller;
-use slog::DrainExt;
 use cluster::ClusterMsg;
 
 const TIMEOUT: usize = 5000; // ms
@@ -84,14 +83,9 @@ const TIMEOUT: usize = 5000; // ms
 /// by rabble.
 ///
 /// All nodes in a cluster must be parameterized by the same type.
-pub fn rouse<'de, T>(node_id: NodeId, logger: Option<slog::Logger>) -> (Node<T>, Vec<JoinHandle<()>>)
+pub fn rouse<'de, T>(node_id: NodeId, logger: slog::Logger) -> (Node<T>, Vec<JoinHandle<()>>)
   where T: Serialize + Deserialize<'de> + Send + 'static + Clone + Debug,
 {
-    let logger = match logger {
-        Some(logger) => logger.new(o!("node_id" => node_id.to_string())),
-        None => slog::Logger::root(slog_stdlog::StdLog.fuse(), o!("node_id" => node_id.to_string()))
-    };
-
     let mut poller = Poller::new().unwrap();
     let (exec_tx, exec_rx) = channel();
     let (cluster_tx, cluster_rx) = channel();

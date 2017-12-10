@@ -26,14 +26,13 @@ impl<'de, T, H> Service<T, H>
     where T: Serialize + Deserialize<'de> + Debug + Clone,
           H: ServiceHandler<T>
 {
-    pub fn new(pid: Pid, node: Node<T>, mut handler: H)
+    pub fn new(poller: Poller, pid: Pid, node: Node<T>, mut handler: H)
         -> Result<Service<T, H>>
     {
-        let poller = Poller::new().unwrap();
         let mut registrar = poller.get_registrar()?;
         let (tx, rx) = registrar.channel()?;
         node.register_service(&pid, &tx)?;
-        handler.init(&registrar, &node)?;
+        handler.init(&mut registrar, &node)?;
         let logger = node.logger.new(o!("component" => "service", "pid" => pid.to_string()));
         Ok(Service {
             pid: pid,
@@ -65,7 +64,7 @@ impl<'de, T, H> Service<T, H>
                 } else {
                     if let Err(e) = self.handler.handle_notification(&self.node,
                                                                      notification,
-                                                                     &self.registrar) {
+                                                                     &mut self.registrar) {
                         warn!(self.logger,
                                "Failed to handle poll notification";
                                "error" => e.to_string())
@@ -80,7 +79,7 @@ impl<'de, T, H> Service<T, H>
             if let Msg::Shutdown = envelope.msg {
                 return Err(ErrorKind::Shutdown(self.pid.clone()).into());
             }
-            try!(self.handler.handle_envelope(&self.node, envelope, &self.registrar));
+            try!(self.handler.handle_envelope(&self.node, envelope, &mut self.registrar));
         }
         Ok(())
     }
